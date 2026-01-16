@@ -87,11 +87,12 @@ export const addTracking = async (req, res) => {
 
 export const uploadPayment = async (req, res) => {
   try {
-    // In a real app, you'd upload the file and get the URL
-    const paymentImage = req.body.paymentImage || req.file?.path
+    // Support both paymentSlipUrl (from API docs) and paymentImage (legacy)
+    // Also support file upload via multer
+    const paymentImage = req.body.paymentSlipUrl || req.body.paymentImage || req.file?.path
     
     if (!paymentImage) {
-      return res.status(400).json({ message: 'Payment image required' })
+      return res.status(400).json({ message: 'Payment slip URL is required' })
     }
 
     const order = await ordersService.uploadPayment(req.params.id, paymentImage)

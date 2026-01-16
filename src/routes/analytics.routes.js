@@ -9,8 +9,8 @@ export const router = Router()
 router.use(authMiddleware, adminMiddleware)
 
 router.get('/summary', analyticsController.getSummary)
-router.get('/sales/province', analyticsController.getSalesByProvince)
-router.get('/sales/history', analyticsController.getSalesHistory)
+router.get('/provinces', analyticsController.getSalesByProvince)
+router.get('/history', analyticsController.getSalesHistory)
 router.get('/top-provinces', analyticsController.getTopProvinces)
 router.get('/top-products', analyticsController.getTopProducts)
 

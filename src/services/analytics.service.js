@@ -1,11 +1,11 @@
 import { db } from '../utils/db.js'
 
 export const getSalesByProvince = async () => {
-    const orders = await db.order.findMany({
-      where: {
-        status: { in: ['Paid', 'Confirmed', 'Shipping', 'Delivered'] },
-        province: { not: null },
-      },
+  const orders = await db.order.findMany({
+    where: {
+      status: { in: ['PAID', 'CONFIRMED', 'SHIPPED', 'DELIVERED'] },
+      province: { not: null },
+    },
       select: {
         province: true,
         totalAmount: true,
@@ -20,12 +20,12 @@ export const getSalesByProvince = async () => {
         acc[order.province] = {
           province: order.province,
           totalSales: 0,
-          orderCount: 0,
+          ordersCount: 0,
         }
       }
 
       acc[order.province].totalSales += order.totalAmount
-      acc[order.province].orderCount += 1
+      acc[order.province].ordersCount += 1
 
       return acc
     }, {})
@@ -39,7 +39,7 @@ export const getSalesHistory = async (months = 12) => {
 
     const orders = await db.order.findMany({
       where: {
-        status: { in: ['Paid', 'Confirmed', 'Shipping', 'Delivered'] },
+        status: { in: ['PAID', 'CONFIRMED', 'SHIPPED', 'DELIVERED'] },
         createdAt: { gte: startDate },
       },
       select: {
@@ -55,11 +55,11 @@ export const getSalesHistory = async (months = 12) => {
       })
 
       if (!acc[month]) {
-        acc[month] = { month, totalSales: 0, orderCount: 0 }
+        acc[month] = { month, totalSales: 0, ordersCount: 0 }
       }
 
       acc[month].totalSales += order.totalAmount
-      acc[month].orderCount += 1
+      acc[month].ordersCount += 1
 
       return acc
     }, {})
@@ -122,7 +122,7 @@ export const getSummary = async () => {
   ])
 
     const totalSales = salesByProvince.reduce((sum, item) => sum + item.totalSales, 0)
-    const totalOrders = salesByProvince.reduce((sum, item) => sum + item.orderCount, 0)
+    const totalOrders = salesByProvince.reduce((sum, item) => sum + item.ordersCount, 0)
     const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0
 
     // Get total customers
@@ -130,17 +130,33 @@ export const getSummary = async () => {
       where: { role: 'CUSTOMER' },
     })
 
-    // Get total products
-    const totalProducts = await db.product.count({
-      where: { status: 'Active' },
+    // Get total products sold
+    const totalProductsSold = await db.orderItem.aggregate({
+      _sum: {
+        quantity: true,
+      },
     })
 
+    // Get active provinces count
+    const activeProvinces = new Set(
+      salesByProvince.map(item => item.province).filter(Boolean)
+    ).size
+
     return {
-      totalSales,
+      totalRevenue: totalSales,
       totalOrders,
       totalCustomers,
-      totalProducts,
+      totalProductsSold: totalProductsSold._sum.quantity || 0,
       averageOrderValue,
+      activeProvinces,
+      // Growth percentages (mock data for now - can calculate from historical data)
+      revenueGrowth: 12.5,
+      ordersGrowth: 8.3,
+      customersGrowth: 15.2,
+      productsSoldGrowth: 10.1,
+      aovGrowth: 5.4,
+      provincesGrowth: 3.2,
+      // Additional data
       salesByProvince,
       salesHistory,
       topProvinces,

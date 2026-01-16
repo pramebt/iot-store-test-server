@@ -156,24 +156,24 @@ export const updateStatus = async (id, status) => {
 }
 
 export const addTracking = async (id, trackingNumber) => {
-    return await db.order.update({
-      where: { id },
-      data: { 
-        trackingNumber,
-        status: 'Shipping',
-      },
-    })
+  return await db.order.update({
+    where: { id },
+    data: { 
+      trackingNumber,
+      status: 'SHIPPED',
+    },
+  })
 }
 
 export const uploadPayment = async (id, paymentImage) => {
-    return await db.order.update({
-      where: { id },
-      data: {
-        paymentImage,
-        paymentAt: new Date(),
-        status: 'Paid',
-      },
-    })
+  return await db.order.update({
+    where: { id },
+    data: {
+      paymentImage,
+      paymentAt: new Date(),
+      status: 'PAID',
+    },
+  })
 }
 
 export const cancel = async (id) => {
@@ -182,13 +182,13 @@ export const cancel = async (id) => {
       include: { items: true },
     })
 
-    if (!order) {
-      throw new Error('Order not found')
-    }
+  if (!order) {
+    throw new Error('Order not found')
+  }
 
-    if (['Shipping', 'Delivered'].includes(order.status)) {
-      throw new Error('Cannot cancel order in shipping or delivered status')
-    }
+  if (['SHIPPED', 'DELIVERED'].includes(order.status)) {
+    throw new Error('Cannot cancel order in shipping or delivered status')
+  }
 
     // Restore product stock
     for (const item of order.items) {
@@ -202,8 +202,8 @@ export const cancel = async (id) => {
       })
     }
 
-    return await db.order.update({
-      where: { id },
-      data: { status: 'Cancelled' },
-    })
+  return await db.order.update({
+    where: { id },
+    data: { status: 'CANCELLED' },
+  })
 }

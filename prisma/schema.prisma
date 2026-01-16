@@ -110,7 +110,7 @@ model Order {
   id             String      @id @default(uuid())
   orderNumber    String      @unique
   totalAmount    Float
-  status         OrderStatus @default(Pending)
+  status         OrderStatus @default(PENDING)
   paymentImage   String?
   paymentAt      DateTime?
   address        String?
@@ -136,12 +136,12 @@ model Order {
 }
 
 enum OrderStatus {
-  Pending
-  Paid
-  Confirmed
-  Shipping
-  Delivered
-  Cancelled
+  PENDING
+  PAID
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
 }
 
 // Order Item model

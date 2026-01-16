@@ -54,6 +54,7 @@ export const create = async (data) => {
       basePrice: data.basePrice || data.price, // Default to price if not provided
       price: data.price,
       stock: data.stock,
+      status: data.status || 'Active',
       imageUrl: data.imageUrl,
       categoryId: data.categoryId,
     },
@@ -72,6 +73,7 @@ export const update = async (id, data) => {
   if (data.basePrice !== undefined) updateData.basePrice = data.basePrice
   if (data.price !== undefined) updateData.price = data.price
   if (data.stock !== undefined) updateData.stock = data.stock
+  if (data.status !== undefined) updateData.status = data.status
   if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl
   if (data.categoryId) updateData.categoryId = data.categoryId
 

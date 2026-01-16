@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.routes.js'
 import productsRoutes from './routes/products.routes.js'
 import categoriesRoutes from './routes/categories.routes.js'
 import ordersRoutes from './routes/orders.routes.js'
+import customersRoutes from './routes/customers.routes.js'
 import analyticsRoutes from './routes/analytics.routes.js'
 
 import { errorMiddleware } from './middleware/error.middleware.js'
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/products', productsRoutes)
 app.use('/api/categories', categoriesRoutes)
 app.use('/api/orders', ordersRoutes)
+app.use('/api/customers', customersRoutes)
 app.use('/api/analytics', analyticsRoutes)
 
 // Health check
@@ -44,6 +46,7 @@ app.get('/', (req, res) => {
       products: '/api/products',
       categories: '/api/categories',
       orders: '/api/orders',
+      customers: '/api/customers',
       analytics: '/api/analytics',
     }
   })
