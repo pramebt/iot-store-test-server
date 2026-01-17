@@ -19,10 +19,6 @@ export const register = async (data) => {
       password: hashedPassword,
       name: data.name,
       phone: data.phone || null,
-      address: data.address || null,
-      province: data.province || null,
-      district: data.district || null,
-      postalCode: data.postalCode || null,
       role: data.role || 'CUSTOMER',
     },
   })

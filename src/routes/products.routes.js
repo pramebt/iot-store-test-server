@@ -12,6 +12,7 @@ router.get('/:id', productsController.getById)
 // Protected routes (Admin only)
 router.post('/', authMiddleware, adminMiddleware, productsController.create)
 router.put('/:id', authMiddleware, adminMiddleware, productsController.update)
+router.post('/:id/image', authMiddleware, adminMiddleware, productsController.uploadImage)
 router.delete('/:id', authMiddleware, adminMiddleware, productsController.deleteProduct)
 
 export default router

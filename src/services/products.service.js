@@ -1,10 +1,52 @@
 import { db } from '../utils/db.js'
+import { uploadBase64Image } from '../utils/cloudinary.js'
 
 export const getAll = async (params = {}) => {
   const where = { status: 'Active' }
 
+  // Category filter
   if (params.category) {
     where.categoryId = params.category
+  }
+
+  // Search by name
+  if (params.search) {
+    where.name = {
+      contains: params.search,
+      mode: 'insensitive',
+    }
+  }
+
+  // Price range filter
+  if (params.minPrice !== undefined || params.maxPrice !== undefined) {
+    where.price = {}
+    if (params.minPrice !== undefined) {
+      where.price.gte = Number(params.minPrice)
+    }
+    if (params.maxPrice !== undefined) {
+      where.price.lte = Number(params.maxPrice)
+    }
+  }
+
+  // Sorting
+  let orderBy = { createdAt: 'desc' } // Default: newest first
+  
+  if (params.sortBy) {
+    const order = params.order === 'asc' ? 'asc' : 'desc'
+    
+    switch (params.sortBy) {
+      case 'price':
+        orderBy = { price: order }
+        break
+      case 'name':
+        orderBy = { name: order }
+        break
+      case 'createdAt':
+        orderBy = { createdAt: order }
+        break
+      default:
+        orderBy = { createdAt: 'desc' }
+    }
   }
 
   const skip = ((params.page || 1) - 1) * (params.limit || 20)
@@ -20,7 +62,7 @@ export const getAll = async (params = {}) => {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy,
       skip,
       take: params.limit || 20,
     }),
@@ -90,5 +132,25 @@ export const deleteProduct = async (id) => {
   return await db.product.update({
     where: { id },
     data: { status: 'Inactive' },
+  })
+}
+
+export const uploadImage = async (id, imageData) => {
+  let imageUrl = imageData;
+  
+  // If it's a base64 string, upload to Cloudinary
+  if (typeof imageData === 'string' && imageData.startsWith('data:image')) {
+    try {
+      imageUrl = await uploadBase64Image(imageData, 'products');
+      console.log('Product image uploaded to Cloudinary:', imageUrl);
+    } catch (error) {
+      console.error('Failed to upload product image to Cloudinary:', error);
+      throw new Error('Failed to upload product image');
+    }
+  }
+  
+  return await db.product.update({
+    where: { id },
+    data: { imageUrl },
   })
 }

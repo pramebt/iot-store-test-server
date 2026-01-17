@@ -1,4 +1,5 @@
 import { db } from '../utils/db.js'
+import { uploadBase64Image } from '../utils/cloudinary.js'
 
 export const getAll = async (params = {}) => {
     const where = {}
@@ -166,10 +167,24 @@ export const addTracking = async (id, trackingNumber) => {
 }
 
 export const uploadPayment = async (id, paymentImage) => {
+  // Check if paymentImage is base64 or URL
+  let imageUrl = paymentImage;
+  
+  // If it's a base64 string, upload to Cloudinary
+  if (paymentImage.startsWith('data:image')) {
+    try {
+      imageUrl = await uploadBase64Image(paymentImage, 'payment-slips');
+      console.log('Uploaded to Cloudinary:', imageUrl);
+    } catch (error) {
+      console.error('Failed to upload to Cloudinary:', error);
+      throw new Error('Failed to upload payment image');
+    }
+  }
+  
   return await db.order.update({
     where: { id },
     data: {
-      paymentImage,
+      paymentImage: imageUrl,
       paymentAt: new Date(),
       status: 'PAID',
     },

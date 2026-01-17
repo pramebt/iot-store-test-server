@@ -2,9 +2,24 @@ import * as productsService from '../services/products.service.js'
 
 export const getAll = async (req, res) => {
   try {
-    const { category, page = 1, limit = 20 } = req.query
+    const { 
+      category, 
+      search,
+      minPrice,
+      maxPrice,
+      sortBy,
+      order,
+      page = 1, 
+      limit = 20 
+    } = req.query
+    
     const products = await productsService.getAll({
       category: category || undefined,
+      search: search || undefined,
+      minPrice: minPrice ? Number(minPrice) : undefined,
+      maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      sortBy: sortBy || undefined,
+      order: order || undefined,
       page: Number(page),
       limit: Number(limit),
     })
@@ -65,5 +80,34 @@ export const deleteProduct = async (req, res) => {
       message: 'Error deleting product',
       error: error.message 
     })
+  }
+}
+
+export const uploadImage = async (req, res) => {
+  try {
+    // Support both base64 from body and file upload
+    let imageData;
+    
+    if (req.file) {
+      // If using multer file upload
+      const fs = await import('fs');
+      const imageBuffer = fs.readFileSync(req.file.path);
+      imageData = `data:${req.file.mimetype};base64,${imageBuffer.toString('base64')}`;
+      // Clean up temp file
+      fs.unlinkSync(req.file.path);
+    } else if (req.body.image) {
+      // If sending base64 directly
+      imageData = req.body.image;
+    } else {
+      return res.status(400).json({ message: 'No image provided' });
+    }
+
+    const product = await productsService.uploadImage(req.params.id, imageData);
+    res.json({ product, message: 'Image uploaded successfully' });
+  } catch (error) {
+    res.status(400).json({ 
+      message: 'Error uploading image', 
+      error: error.message 
+    });
   }
 }
