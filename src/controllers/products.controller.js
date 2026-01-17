@@ -1,4 +1,5 @@
 import * as productsService from '../services/products.service.js'
+import { getProductAvailability } from '../services/productAvailability.service.js'
 
 export const getAll = async (req, res) => {
   try {
@@ -38,11 +39,29 @@ export const getById = async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: 'Product not found' })
     }
-    res.json(product)
+    // Return in format expected by frontend
+    res.json({ product })
   } catch (error) {
     res.status(500).json({ 
       message: 'Error fetching product', 
       error: error.message 
+    })
+  }
+}
+
+export const getAvailability = async (req, res) => {
+  try {
+    const { province } = req.query
+    
+    // Province is optional - if not provided, show all locations
+    const availability = await getProductAvailability(req.params.id, province || null)
+    res.json(availability)
+  } catch (error) {
+    console.error('Error in getAvailability:', error)
+    res.status(500).json({ 
+      message: 'Error checking product availability', 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     })
   }
 }

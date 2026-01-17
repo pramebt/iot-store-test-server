@@ -75,24 +75,43 @@ export const getTopProvinces = async (limit = 10) => {
 }
 
 export const getTopProducts = async (limit = 10) => {
-    const orderItems = await db.orderItem.groupBy({
-      by: ['productId'],
-      _sum: {
+    // Get order items with non-null productId
+    const orderItems = await db.orderItem.findMany({
+      where: {
+        productId: { not: null },
+      },
+      select: {
+        productId: true,
         quantity: true,
       },
-      _count: {
-        productId: true,
-      },
-      orderBy: {
-        _sum: {
-          quantity: 'desc',
-        },
-      },
-      take: limit,
     })
 
+    // Group by productId manually
+    const productStats = orderItems.reduce((acc, item) => {
+      if (!item.productId) return acc
+      
+      if (!acc[item.productId]) {
+        acc[item.productId] = {
+          productId: item.productId,
+          totalSold: 0,
+          orderCount: 0,
+        }
+      }
+      
+      acc[item.productId].totalSold += item.quantity
+      acc[item.productId].orderCount += 1
+      
+      return acc
+    }, {})
+
+    // Sort by totalSold and take top N
+    const topProductStats = Object.values(productStats)
+      .sort((a, b) => b.totalSold - a.totalSold)
+      .slice(0, limit)
+
+    // Fetch product details
     const products = await Promise.all(
-      orderItems.map(async (item) => {
+      topProductStats.map(async (item) => {
         const product = await db.product.findUnique({
           where: { id: item.productId },
           select: {
@@ -102,24 +121,42 @@ export const getTopProducts = async (limit = 10) => {
             imageUrl: true,
           },
         })
+        
+        // If product was deleted, return null (will be filtered out)
+        if (!product) return null
+        
         return {
           ...product,
-          totalSold: item._sum.quantity,
-          orderCount: item._count.productId,
+          totalSold: item.totalSold,
+          orderCount: item.orderCount,
         }
       })
     )
 
-    return products
+    // Filter out null products (deleted products)
+    return products.filter(Boolean)
 }
 
 export const getSummary = async () => {
-  const [salesByProvince, salesHistory, topProvinces, topProducts] = await Promise.all([
-    getSalesByProvince(),
-    getSalesHistory(12),
-    getTopProvinces(10),
-    getTopProducts(10),
-  ])
+  try {
+    const [salesByProvince, salesHistory, topProvinces, topProducts] = await Promise.all([
+      getSalesByProvince().catch(err => {
+        console.error('Error in getSalesByProvince:', err)
+        return []
+      }),
+      getSalesHistory(12).catch(err => {
+        console.error('Error in getSalesHistory:', err)
+        return []
+      }),
+      getTopProvinces(10).catch(err => {
+        console.error('Error in getTopProvinces:', err)
+        return []
+      }),
+      getTopProducts(10).catch(err => {
+        console.error('Error in getTopProducts:', err)
+        return []
+      }),
+    ])
 
     const totalSales = salesByProvince.reduce((sum, item) => sum + item.totalSales, 0)
     const totalOrders = salesByProvince.reduce((sum, item) => sum + item.ordersCount, 0)
@@ -162,4 +199,8 @@ export const getSummary = async () => {
       topProvinces,
       topProducts,
     }
+  } catch (error) {
+    console.error('Error in getSummary:', error)
+    throw error
+  }
 }

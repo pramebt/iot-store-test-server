@@ -2,7 +2,13 @@ import { db } from '../utils/db.js'
 import { uploadBase64Image } from '../utils/cloudinary.js'
 
 export const getAll = async (params = {}) => {
-  const where = { status: 'Active' }
+  const where = {}
+  
+  // Status filter
+  if (params.status) {
+    where.status = params.status
+  }
+  // If no status filter, show all products (for admin page)
 
   // Category filter
   if (params.category) {
@@ -69,6 +75,9 @@ export const getAll = async (params = {}) => {
     db.product.count({ where }),
   ])
 
+  // Product.stock = stock หลัก (global stock)
+  // SalesLocation ดึง stock จาก Product.stock ไปใช้
+  // ดังนั้นแสดง Product.stock โดยตรง (ไม่ต้องคำนวณจาก SalesLocations)
   return {
     products,
     total,
@@ -79,6 +88,9 @@ export const getAll = async (params = {}) => {
 }
 
 export const getById = async (id) => {
+  // Product.stock = stock หลัก (global stock)
+  // SalesLocation ดึง stock จาก Product.stock ไปใช้
+  // ดังนั้นแสดง Product.stock โดยตรง (ไม่ต้องคำนวณจาก SalesLocations)
   return await db.product.findUnique({
     where: { id },
     include: {
@@ -114,7 +126,7 @@ export const update = async (id, data) => {
   if (data.cost !== undefined) updateData.cost = data.cost
   if (data.basePrice !== undefined) updateData.basePrice = data.basePrice
   if (data.price !== undefined) updateData.price = data.price
-  if (data.stock !== undefined) updateData.stock = data.stock
+  if (data.stock !== undefined) updateData.stock = data.stock // Product.stock = stock หลัก
   if (data.status !== undefined) updateData.status = data.status
   if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl
   if (data.categoryId) updateData.categoryId = data.categoryId
@@ -129,9 +141,21 @@ export const update = async (id, data) => {
 }
 
 export const deleteProduct = async (id) => {
-  return await db.product.update({
+  // Check if product exists
+  const product = await db.product.findUnique({
     where: { id },
-    data: { status: 'Inactive' },
+  })
+
+  if (!product) {
+    throw new Error('Product not found')
+  }
+
+  // Delete product directly
+  // - ProductSalesLocation will be deleted via cascade (onDelete: Cascade)
+  // - CartItems will be deleted via cascade (onDelete: Cascade)
+  // - OrderItems.productId will be set to null (onDelete: SetNull) to preserve order history
+  return await db.product.delete({
+    where: { id },
   })
 }
 

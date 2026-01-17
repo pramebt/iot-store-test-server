@@ -7,6 +7,8 @@ export const router = Router()
 
 // Public routes
 router.get('/', productsController.getAll)
+// More specific route must come before generic :id route
+router.get('/:id/availability', productsController.getAvailability)
 router.get('/:id', productsController.getById)
 
 // Protected routes (Admin only)

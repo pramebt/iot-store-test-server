@@ -8,6 +8,9 @@ import categoriesRoutes from './routes/categories.routes.js'
 import ordersRoutes from './routes/orders.routes.js'
 import customersRoutes from './routes/customers.routes.js'
 import analyticsRoutes from './routes/analytics.routes.js'
+import salesLocationsRoutes from './routes/salesLocations.routes.js'
+import deliveryAddressesRoutes from './routes/deliveryAddresses.routes.js'
+import shippingRoutes from './routes/shipping.routes.js'
 
 import { errorMiddleware } from './middleware/error.middleware.js'
 
@@ -32,6 +35,9 @@ app.use('/api/categories', categoriesRoutes)
 app.use('/api/orders', ordersRoutes)
 app.use('/api/customers', customersRoutes)
 app.use('/api/analytics', analyticsRoutes)
+app.use('/api/sales-locations', salesLocationsRoutes)
+app.use('/api/delivery-addresses', deliveryAddressesRoutes)
+app.use('/api/shipping', shippingRoutes)
 
 // Health check
 app.get('/health', (req, res) => {
@@ -49,6 +55,9 @@ app.get('/', (req, res) => {
       orders: '/api/orders',
       customers: '/api/customers',
       analytics: '/api/analytics',
+      salesLocations: '/api/sales-locations',
+      deliveryAddresses: '/api/delivery-addresses',
+      shipping: '/api/shipping',
     }
   })
 })

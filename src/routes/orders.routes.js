@@ -18,5 +18,6 @@ router.delete('/:id', ordersController.cancel)
 // Admin routes
 router.put('/:id/status', adminMiddleware, ordersController.updateStatus)
 router.put('/:id/tracking', adminMiddleware, ordersController.addTracking)
+router.put('/:id/delivery-address', adminMiddleware, ordersController.assignDeliveryAddress)
 
 export default router

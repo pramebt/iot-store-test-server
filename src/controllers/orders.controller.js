@@ -116,3 +116,16 @@ export const cancel = async (req, res) => {
     })
   }
 }
+
+export const assignDeliveryAddress = async (req, res) => {
+  try {
+    const { deliveryAddressId } = req.body
+    const order = await ordersService.assignDeliveryAddress(req.params.id, deliveryAddressId)
+    res.json(order)
+  } catch (error) {
+    res.status(400).json({ 
+      message: 'Error assigning delivery address', 
+      error: error.message 
+    })
+  }
+}

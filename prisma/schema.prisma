@@ -66,8 +66,9 @@ model Product {
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
 
-  orderItems OrderItem[]
-  cartItems  CartItem[]
+  orderItems         OrderItem[]
+  cartItems          CartItem[]
+  salesLocations     ProductSalesLocation[]
 
   @@map("products")
 }
@@ -100,7 +101,7 @@ model CartItem {
   cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
   
   productId String
-  product   Product @relation(fields: [productId], references: [id])
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("cart_items")
 }
@@ -124,11 +125,18 @@ model Order {
   district       String?
   postalCode     String?
   
+  // Sales Location & Delivery Address
+  salesLocationId    String?
+  deliveryAddressId  String?
+  
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
   customerId String
   customer   User        @relation(fields: [customerId], references: [id])
+  
+  salesLocation   SalesLocation?   @relation(fields: [salesLocationId], references: [id])
+  deliveryAddress DeliveryAddress? @relation(fields: [deliveryAddressId], references: [id])
   
   items      OrderItem[]
 
@@ -153,8 +161,78 @@ model OrderItem {
   orderId   String
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   @@map("order_items")
 }
+
+// Location Type enum
+enum LocationType {
+  STORE      // ร้านค้า
+  WAREHOUSE  // โกดัง
+  IOT_POINT  // จุดติดตั้ง IoT
+}
+
+// Sales Location model (สถานที่ขาย)
+model SalesLocation {
+  id          String       @id @default(uuid())
+  name        String       // เช่น "สาขาเซ็นทรัลเวิลด์", "สาขาสยามพารากอน"
+  code        String       @unique  // เช่น "BKK001", "CM001"
+  address     String
+  province    String
+  district    String
+  postalCode  String?
+  phone       String?
+  email       String?
+  latitude    Float?       // พิกัด Latitude
+  longitude   Float?       // พิกัด Longitude
+  locationType LocationType @default(STORE)  // ประเภทสถานที่
+  status      Status       @default(Active)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  products    ProductSalesLocation[]  // สินค้าที่ขายในสาขานี้
+  orders      Order[]                // Order ที่ขายจากสาขานี้
+
+  @@map("sales_locations")
+}
+
+// DeliveryAddress model (สถานที่ส่งสินค้า)
+model DeliveryAddress {
+  id          String       @id @default(uuid())
+  name        String       // เช่น "ที่อยู่จัดส่งบางนา", "ที่อยู่จัดส่งดอนเมือง"
+  code        String       @unique  // เช่น "DA-BKK-001", "DA-CM-001"
+  address     String
+  province    String
+  district    String
+  postalCode  String?
+  phone       String?
+  email       String?
+  latitude    Float?       // พิกัด Latitude
+  longitude   Float?       // พิกัด Longitude
+  locationType LocationType @default(WAREHOUSE)  // ประเภทสถานที่
+  status      Status       @default(Active)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  orders       Order[]             // Order ที่ส่งจากที่อยู่จัดส่งนี้
+
+  @@map("delivery_addresses")
+}
+
+// ProductSalesLocation (Many-to-Many: Product ↔ SalesLocation)
+model ProductSalesLocation {
+  id              String @id @default(uuid())
+  productId       String
+  salesLocationId String
+  isAvailable     Boolean @default(true)  // สินค้าพร้อมขายที่สาขานี้หรือไม่
+  stock           Int    @default(0)      // สต็อกสินค้าในสาขานี้ (SalesLocation = สถานที่ขายและเก็บสินค้า)
+  
+  product       Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  salesLocation SalesLocation @relation(fields: [salesLocationId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, salesLocationId])
+  @@map("product_sales_locations")
+}
+
