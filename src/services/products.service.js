@@ -90,38 +90,61 @@ export const getAll = async (params = {}) => {
 
   // เพิ่มข้อมูลสต็อกตามสถานที่ขายให้กับแต่ละ product
   const productsWithStockInfo = products.map(product => {
-    // คำนวณสต็อกทั้งหมดจากทุกสถานที่ขาย
-    const totalAvailableStock = product.salesLocations
-      .filter(psl => psl.isAvailable && psl.salesLocation.status === 'Active')
-      .reduce((sum, psl) => sum + (psl.stock || 0), 0)
+    try {
+      // ตรวจสอบว่ามี salesLocations หรือไม่
+      const salesLocations = Array.isArray(product.salesLocations) ? product.salesLocations : []
+      
+      // คำนวณสต็อกทั้งหมดจากทุกสถานที่ขาย (กรองเฉพาะที่มี salesLocation และ status Active)
+      const totalAvailableStock = salesLocations
+        .filter(psl => 
+          psl &&
+          psl.isAvailable && 
+          psl.salesLocation && 
+          psl.salesLocation.status === 'Active'
+        )
+        .reduce((sum, psl) => sum + (psl.stock || 0), 0)
 
-    // หาสถานที่ที่ยังมีสต็อก
-    const availableLocations = product.salesLocations
-      .filter(psl => 
-        psl.isAvailable && 
-        psl.salesLocation.status === 'Active' && 
-        (psl.stock || 0) > 0
-      )
-      .map(psl => ({
-        id: psl.salesLocation.id,
-        name: psl.salesLocation.name,
-        province: psl.salesLocation.province,
-        district: psl.salesLocation.district,
-        stock: psl.stock || 0,
-      }))
+      // หาสถานที่ที่ยังมีสต็อก
+      const availableLocations = salesLocations
+        .filter(psl => 
+          psl &&
+          psl.isAvailable && 
+          psl.salesLocation && 
+          psl.salesLocation.status === 'Active' && 
+          (psl.stock || 0) > 0
+        )
+        .map(psl => ({
+          id: psl.salesLocation.id,
+          name: psl.salesLocation.name || 'ไม่ระบุ',
+          province: psl.salesLocation.province || '',
+          district: psl.salesLocation.district || '',
+          stock: psl.stock || 0,
+        }))
 
-    return {
-      ...product,
-      // ใช้ totalAvailableStock แทน product.stock สำหรับการแสดงผล
-      availableStock: totalAvailableStock,
-      availableLocations,
-      // เก็บ salesLocations สำหรับข้อมูลเพิ่มเติม
-      salesLocations: product.salesLocations.map(psl => ({
-        id: psl.id,
-        stock: psl.stock || 0,
-        isAvailable: psl.isAvailable,
-        salesLocation: psl.salesLocation,
-      })),
+      return {
+        ...product,
+        // ใช้ totalAvailableStock แทน product.stock สำหรับการแสดงผล
+        availableStock: totalAvailableStock,
+        availableLocations,
+        // เก็บ salesLocations สำหรับข้อมูลเพิ่มเติม (กรองเฉพาะที่มี salesLocation)
+        salesLocations: salesLocations
+          .filter(psl => psl && psl.salesLocation !== null)
+          .map(psl => ({
+            id: psl.id,
+            stock: psl.stock || 0,
+            isAvailable: psl.isAvailable,
+            salesLocation: psl.salesLocation,
+          })),
+      }
+    } catch (error) {
+      // ถ้าเกิดข้อผิดพลาดในการประมวลผล ให้ส่งคืน product เดิมพร้อมค่า default
+      console.error('Error processing product stock info:', error, product.id)
+      return {
+        ...product,
+        availableStock: product.stock || 0,
+        availableLocations: [],
+        salesLocations: [],
+      }
     }
   })
 
@@ -159,36 +182,60 @@ export const getById = async (id) => {
     return null
   }
 
-  // คำนวณสต็อกทั้งหมดจากทุกสถานที่ขาย
-  const totalAvailableStock = product.salesLocations
-    .filter(psl => psl.isAvailable && psl.salesLocation.status === 'Active')
-    .reduce((sum, psl) => sum + (psl.stock || 0), 0)
+  try {
+    // ตรวจสอบว่ามี salesLocations หรือไม่
+    const salesLocations = Array.isArray(product.salesLocations) ? product.salesLocations : []
 
-  // หาสถานที่ที่ยังมีสต็อก
-  const availableLocations = product.salesLocations
-    .filter(psl => 
-      psl.isAvailable && 
-      psl.salesLocation.status === 'Active' && 
-      (psl.stock || 0) > 0
-    )
-    .map(psl => ({
-      id: psl.salesLocation.id,
-      name: psl.salesLocation.name,
-      province: psl.salesLocation.province,
-      district: psl.salesLocation.district,
-      stock: psl.stock || 0,
-    }))
+    // คำนวณสต็อกทั้งหมดจากทุกสถานที่ขาย (กรองเฉพาะที่มี salesLocation และ status Active)
+    const totalAvailableStock = salesLocations
+      .filter(psl => 
+        psl &&
+        psl.isAvailable && 
+        psl.salesLocation && 
+        psl.salesLocation.status === 'Active'
+      )
+      .reduce((sum, psl) => sum + (psl.stock || 0), 0)
 
-  return {
-    ...product,
-    availableStock: totalAvailableStock,
-    availableLocations,
-    salesLocations: product.salesLocations.map(psl => ({
-      id: psl.id,
-      stock: psl.stock || 0,
-      isAvailable: psl.isAvailable,
-      salesLocation: psl.salesLocation,
-    })),
+    // หาสถานที่ที่ยังมีสต็อก
+    const availableLocations = salesLocations
+      .filter(psl => 
+        psl &&
+        psl.isAvailable && 
+        psl.salesLocation && 
+        psl.salesLocation.status === 'Active' && 
+        (psl.stock || 0) > 0
+      )
+      .map(psl => ({
+        id: psl.salesLocation.id,
+        name: psl.salesLocation.name || 'ไม่ระบุ',
+        province: psl.salesLocation.province || '',
+        district: psl.salesLocation.district || '',
+        stock: psl.stock || 0,
+      }))
+
+    return {
+      ...product,
+      availableStock: totalAvailableStock,
+      availableLocations,
+      // เก็บ salesLocations สำหรับข้อมูลเพิ่มเติม (กรองเฉพาะที่มี salesLocation)
+      salesLocations: salesLocations
+        .filter(psl => psl && psl.salesLocation !== null)
+        .map(psl => ({
+          id: psl.id,
+          stock: psl.stock || 0,
+          isAvailable: psl.isAvailable,
+          salesLocation: psl.salesLocation,
+        })),
+    }
+  } catch (error) {
+    // ถ้าเกิดข้อผิดพลาดในการประมวลผล ให้ส่งคืน product เดิมพร้อมค่า default
+    console.error('Error processing product stock info:', error, product.id)
+    return {
+      ...product,
+      availableStock: product.stock || 0,
+      availableLocations: [],
+      salesLocations: [],
+    }
   }
 }
 
