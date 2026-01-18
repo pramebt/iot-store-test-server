@@ -19,29 +19,29 @@ dotenv.config()
 export const app = express()
 
 // Middleware - CORS Configuration
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'https://iot-store-test-fe.vercel.app',
-  // Add more production domains here
-  ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : []),
-  ...(process.env.CLIENT_URLS ? process.env.CLIENT_URLS.split(',') : []),
-]
-
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true)
     
+    // In development, allow all origins for easier testing
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true)
+    }
+    
+    // In production, use environment variable or allow specific origins
+    const allowedOrigins = process.env.ALLOWED_ORIGINS 
+      ? process.env.ALLOWED_ORIGINS.split(',').map(url => url.trim())
+      : [
+          'http://localhost:5173',
+          'http://localhost:3000',
+          'https://iot-store-test-fe.vercel.app',
+        ]
+    
     if (allowedOrigins.includes(origin)) {
       callback(null, true)
     } else {
-      // In development, allow all origins for easier testing
-      if (process.env.NODE_ENV !== 'production') {
-        callback(null, true)
-      } else {
-        callback(new Error('Not allowed by CORS'))
-      }
+      callback(new Error('Not allowed by CORS'))
     }
   },
   credentials: true,
