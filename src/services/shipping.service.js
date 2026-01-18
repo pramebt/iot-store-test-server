@@ -8,8 +8,6 @@ import { selectDeliveryAddressAndSalesLocation, calculateShippingFee, checkProdu
  * SalesLocation = สถานที่ขายและเก็บสินค้า (มี stock)
  */
 export const calculateShippingInfo = async (items, shippingProvince) => {
-  console.log('calculateShippingInfo called with:', { items, shippingProvince })
-
   if (!shippingProvince) {
     throw new Error('Province is required')
   }
@@ -20,9 +18,6 @@ export const calculateShippingInfo = async (items, shippingProvince) => {
 
   // Find SalesLocation with stock and select delivery address for shipping
   const { deliveryAddress, salesLocation } = await selectDeliveryAddressAndSalesLocation(items, shippingProvince)
-  
-  console.log('Selected delivery address:', deliveryAddress?.name)
-  console.log('Selected sales location:', salesLocation?.name)
 
   // Calculate shipping fee
   const shippingFee = calculateShippingFee(deliveryAddress, shippingProvince)

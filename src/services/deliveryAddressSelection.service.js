@@ -8,14 +8,10 @@ import { db } from '../utils/db.js'
  * SalesLocation = สถานที่ขายและเก็บสินค้า (มี stock)
  */
 export const selectDeliveryAddressAndSalesLocation = async (orderItems, shippingProvince) => {
-  console.log('selectDeliveryAddressAndSalesLocation called with:', { orderItems, shippingProvince })
-
   // Get all active delivery addresses
   const deliveryAddresses = await db.deliveryAddress.findMany({
     where: { status: 'Active' },
   })
-
-  console.log('Found delivery addresses:', deliveryAddresses.length)
 
   if (deliveryAddresses.length === 0) {
     throw new Error('No active delivery addresses available')
@@ -26,8 +22,6 @@ export const selectDeliveryAddressAndSalesLocation = async (orderItems, shipping
   const salesLocations = await db.salesLocation.findMany({
     where: { status: 'Active' },
   })
-
-  console.log('Found sales locations:', salesLocations.length)
 
   let selectedSalesLocation = null
 
@@ -66,10 +60,7 @@ export const selectDeliveryAddressAndSalesLocation = async (orderItems, shipping
 
     if (hasAllStock) {
       selectedSalesLocation = salesLocation
-      console.log('Selected sales location:', salesLocation.name)
       break // Use first SalesLocation that has all stock
-    } else {
-      console.log(`Sales location ${salesLocation.name} doesn't have all stock:`, stockIssues)
     }
   }
 

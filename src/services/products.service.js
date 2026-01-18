@@ -306,7 +306,6 @@ export const uploadImage = async (id, imageData) => {
   if (typeof imageData === 'string' && imageData.startsWith('data:image')) {
     try {
       imageUrl = await uploadBase64Image(imageData, 'products');
-      console.log('Product image uploaded to Cloudinary:', imageUrl);
     } catch (error) {
       console.error('Failed to upload product image to Cloudinary:', error);
       throw new Error('Failed to upload product image');

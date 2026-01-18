@@ -315,7 +315,6 @@ export const uploadPayment = async (id, paymentImage) => {
   if (paymentImage.startsWith('data:image')) {
     try {
       imageUrl = await uploadBase64Image(paymentImage, 'payment-slips');
-      console.log('Uploaded to Cloudinary:', imageUrl);
     } catch (error) {
       console.error('Failed to upload to Cloudinary:', error);
       throw new Error('Failed to upload payment image');

@@ -4,8 +4,6 @@ export const calculateShipping = async (req, res) => {
   try {
     const { items, province } = req.body
 
-    console.log('Calculate shipping request:', { items, province })
-
     if (!items || !Array.isArray(items) || items.length === 0) {
       console.error('Invalid items:', items)
       return res.status(400).json({ 
