@@ -101,15 +101,6 @@ export const selectDeliveryAddressAndSalesLocation = async (orderItems, shipping
 }
 
 /**
- * Select the best delivery address for shipping (backward compatibility)
- * @deprecated Use selectDeliveryAddressAndSalesLocation instead
- */
-export const selectDeliveryAddress = async (orderItems, shippingProvince) => {
-  const result = await selectDeliveryAddressAndSalesLocation(orderItems, shippingProvince)
-  return result.deliveryAddress
-}
-
-/**
  * Calculate shipping fee based on delivery address and shipping address
  * Simple implementation: based on province matching
  * (Can be enhanced with distance calculation using Google Maps API)

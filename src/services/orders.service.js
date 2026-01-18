@@ -1,6 +1,6 @@
 import { db } from '../utils/db.js'
 import { uploadBase64Image } from '../utils/cloudinary.js'
-import { selectDeliveryAddress, selectDeliveryAddressAndSalesLocation, calculateShippingFee } from './deliveryAddressSelection.service.js'
+import { selectDeliveryAddressAndSalesLocation, calculateShippingFee } from './deliveryAddressSelection.service.js'
 
 export const getAll = async (params = {}) => {
     const where = {}
@@ -113,10 +113,6 @@ export const getById = async (id) => {
         // Keep deliveryAddress as null if fetch fails
       }
     }
-
-    // Also check for legacy warehouseId (for orders created before migration)
-    // Note: This is a fallback - the migration should have handled this
-    // But we keep it for safety in case some orders weren't migrated
 
     return order
 }
