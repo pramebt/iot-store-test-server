@@ -177,8 +177,8 @@ enum LocationType {
 // Sales Location model (สถานที่ขาย)
 model SalesLocation {
   id          String       @id @default(uuid())
-  name        String       // เช่น "สาขาเซ็นทรัลเวิลด์", "สาขาสยามพารากอน"
-  code        String       @unique  // เช่น "BKK001", "CM001"
+  name        String       
+  code        String       @unique  
   address     String
   province    String
   district    String

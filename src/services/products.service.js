@@ -67,6 +67,19 @@ export const getAll = async (params = {}) => {
             name: true,
           },
         },
+        salesLocations: {
+          include: {
+            salesLocation: {
+              select: {
+                id: true,
+                name: true,
+                province: true,
+                district: true,
+                status: true,
+              },
+            },
+          },
+        },
       },
       orderBy,
       skip,
@@ -75,11 +88,45 @@ export const getAll = async (params = {}) => {
     db.product.count({ where }),
   ])
 
-  // Product.stock = stock หลัก (global stock)
-  // SalesLocation ดึง stock จาก Product.stock ไปใช้
-  // ดังนั้นแสดง Product.stock โดยตรง (ไม่ต้องคำนวณจาก SalesLocations)
+  // เพิ่มข้อมูลสต็อกตามสถานที่ขายให้กับแต่ละ product
+  const productsWithStockInfo = products.map(product => {
+    // คำนวณสต็อกทั้งหมดจากทุกสถานที่ขาย
+    const totalAvailableStock = product.salesLocations
+      .filter(psl => psl.isAvailable && psl.salesLocation.status === 'Active')
+      .reduce((sum, psl) => sum + (psl.stock || 0), 0)
+
+    // หาสถานที่ที่ยังมีสต็อก
+    const availableLocations = product.salesLocations
+      .filter(psl => 
+        psl.isAvailable && 
+        psl.salesLocation.status === 'Active' && 
+        (psl.stock || 0) > 0
+      )
+      .map(psl => ({
+        id: psl.salesLocation.id,
+        name: psl.salesLocation.name,
+        province: psl.salesLocation.province,
+        district: psl.salesLocation.district,
+        stock: psl.stock || 0,
+      }))
+
+    return {
+      ...product,
+      // ใช้ totalAvailableStock แทน product.stock สำหรับการแสดงผล
+      availableStock: totalAvailableStock,
+      availableLocations,
+      // เก็บ salesLocations สำหรับข้อมูลเพิ่มเติม
+      salesLocations: product.salesLocations.map(psl => ({
+        id: psl.id,
+        stock: psl.stock || 0,
+        isAvailable: psl.isAvailable,
+        salesLocation: psl.salesLocation,
+      })),
+    }
+  })
+
   return {
-    products,
+    products: productsWithStockInfo,
     total,
     page: params.page || 1,
     limit: params.limit || 20,
@@ -88,15 +135,61 @@ export const getAll = async (params = {}) => {
 }
 
 export const getById = async (id) => {
-  // Product.stock = stock หลัก (global stock)
-  // SalesLocation ดึง stock จาก Product.stock ไปใช้
-  // ดังนั้นแสดง Product.stock โดยตรง (ไม่ต้องคำนวณจาก SalesLocations)
-  return await db.product.findUnique({
+  const product = await db.product.findUnique({
     where: { id },
     include: {
       category: true,
+      salesLocations: {
+        include: {
+          salesLocation: {
+            select: {
+              id: true,
+              name: true,
+              province: true,
+              district: true,
+              status: true,
+            },
+          },
+        },
+      },
     },
   })
+
+  if (!product) {
+    return null
+  }
+
+  // คำนวณสต็อกทั้งหมดจากทุกสถานที่ขาย
+  const totalAvailableStock = product.salesLocations
+    .filter(psl => psl.isAvailable && psl.salesLocation.status === 'Active')
+    .reduce((sum, psl) => sum + (psl.stock || 0), 0)
+
+  // หาสถานที่ที่ยังมีสต็อก
+  const availableLocations = product.salesLocations
+    .filter(psl => 
+      psl.isAvailable && 
+      psl.salesLocation.status === 'Active' && 
+      (psl.stock || 0) > 0
+    )
+    .map(psl => ({
+      id: psl.salesLocation.id,
+      name: psl.salesLocation.name,
+      province: psl.salesLocation.province,
+      district: psl.salesLocation.district,
+      stock: psl.stock || 0,
+    }))
+
+  return {
+    ...product,
+    availableStock: totalAvailableStock,
+    availableLocations,
+    salesLocations: product.salesLocations.map(psl => ({
+      id: psl.id,
+      stock: psl.stock || 0,
+      isAvailable: psl.isAvailable,
+      salesLocation: psl.salesLocation,
+    })),
+  }
 }
 
 export const create = async (data) => {
